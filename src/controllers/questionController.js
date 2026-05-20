@@ -37,8 +37,33 @@ const getRandomQuestion = async (req, res) => {
   res.json(randomQuestion);
 };
 
+const checkAnswer = async (req, res) => {
+  const { questionId, answer } = req.body;
+
+  const question = await prisma.question.findUnique({
+    where: {
+      id: questionId,
+    },
+  });
+
+  if (!question) {
+    return res.status(404).json({
+      message: "Question not found",
+    });
+  }
+
+  const correct =
+    question.answer.toString().trim() ===
+    answer.toString().trim();
+
+  res.json({
+    correct,
+  });
+};
+
 module.exports = {
   createQuestion,
   getQuestions,
   getRandomQuestion,
+  checkAnswer,
 };
