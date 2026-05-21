@@ -60,7 +60,7 @@ const getRandomQuestion = async (req, res) => {
   
     return res.json(savedQuestion);
   }
-  if (questions.length < 5) {
+  if (questions.length < 100) {
 
     const generated = generateQuestion(difficulty);
   
