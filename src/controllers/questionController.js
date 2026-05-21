@@ -27,12 +27,16 @@ const getQuestions = async (req, res) => {
 const getRandomQuestion = async (req, res) => {
   const { difficulty, exclude } = req.query;
 
+  const excludeId = parseInt(exclude);
+
   const questions = await prisma.question.findMany({
     where: {
       difficulty,
-      id: {
-        not: Number(exclude),
-      },
+      ...(excludeId && {
+        id: {
+          not: excludeId,
+        },
+      }),
     },
   });
 
