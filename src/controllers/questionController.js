@@ -1,15 +1,17 @@
 const { PrismaClient } = require("@prisma/client");
+const { generateQuestion } = require("../utils/questionGenerator");
 
 const prisma = new PrismaClient();
 
 const createQuestion = async (req, res) => {
-  const { question, answer, difficulty } = req.body;
+  const { question, answer, difficulty, explanation } = req.body;
 
   const newQuestion = await prisma.question.create({
     data: {
       question,
       answer,
       difficulty,
+      explanation,
     },
   });
 
@@ -70,9 +72,29 @@ const checkAnswer = async (req, res) => {
   });
 };
 
+const generateNewQuestion = async (req, res) => {
+  const { difficulty } = req.query;
+
+  const generated = generateQuestion(difficulty);
+
+  const savedQuestion = await prisma.question.create({
+    data: {
+      question: generated.text,
+      answer: Array.isArray(generated.answer)
+        ? generated.answer.join(", ")
+        : generated.answer.toString(),
+      difficulty,
+      explanation: generated.explanation,
+    },
+  });
+
+  res.json(savedQuestion);
+};
+
 module.exports = {
   createQuestion,
   getQuestions,
   getRandomQuestion,
   checkAnswer,
+  generateNewQuestion,
 };
