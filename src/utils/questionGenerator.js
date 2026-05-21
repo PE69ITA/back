@@ -162,7 +162,7 @@ function generateQuestion(level) {
         return `Складываем ${q.a} и ${q.b} и получаем ${q.answer}.`;
   
       case "subtraction":
-        return `Вычитаем ${q.b} из ${q.a} и получаем ${q.answer}.`;
+        return `Вычитаем ${q.a} из ${q.b} и получаем ${q.answer}.`;
   
       case "multiplication":
         return `Умножаем ${q.a} на ${q.b} и получаем ${q.answer}.`;
@@ -171,7 +171,7 @@ function generateQuestion(level) {
         return `${q.b} - ${q.a} = ${q.answer}.`;
   
       case "linear_eq_mult":
-        return `${q.b} ÷ ${q.a} = ${q.answer}.`;
+        return `${q.a} ÷ ${q.b} = ${q.answer}.`;
   
       case "two_step":
         return `Сначала вычитаем ${q.b}, потом делим на ${q.a}. Получаем ${q.answer}.`;

@@ -60,6 +60,24 @@ const getRandomQuestion = async (req, res) => {
   
     return res.json(savedQuestion);
   }
+  if (questions.length < 5) {
+
+    const generated = generateQuestion(difficulty);
+  
+    await prisma.question.create({
+      data: {
+        question: generated.text,
+  
+        answer: Array.isArray(generated.answer)
+          ? generated.answer.join(", ")
+          : generated.answer.toString(),
+  
+        difficulty,
+  
+        explanation: generated.explanation,
+      },
+    });
+  }
 
   const randomQuestion =
     questions[Math.floor(Math.random() * questions.length)];
