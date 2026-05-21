@@ -41,9 +41,24 @@ const getRandomQuestion = async (req, res) => {
   });
 
   if (questions.length === 0) {
-    return res.status(404).json({
-      message: "No questions found",
+
+    const generated = generateQuestion(difficulty);
+  
+    const savedQuestion = await prisma.question.create({
+      data: {
+        question: generated.text,
+  
+        answer: Array.isArray(generated.answer)
+          ? generated.answer.join(", ")
+          : generated.answer.toString(),
+  
+        difficulty,
+  
+        explanation: generated.explanation,
+      },
     });
+  
+    return res.json(savedQuestion);
   }
 
   const randomQuestion =
