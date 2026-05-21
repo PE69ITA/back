@@ -23,13 +23,22 @@ const getQuestions = async (req, res) => {
 };
 
 const getRandomQuestion = async (req, res) => {
-  const { difficulty } = req.query;
+  const { difficulty, exclude } = req.query;
 
   const questions = await prisma.question.findMany({
     where: {
       difficulty,
+      id: {
+        not: Number(exclude),
+      },
     },
   });
+
+  if (questions.length === 0) {
+    return res.status(404).json({
+      message: "No questions found",
+    });
+  }
 
   const randomQuestion =
     questions[Math.floor(Math.random() * questions.length)];
