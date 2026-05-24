@@ -29,7 +29,7 @@ const getRandomQuestion = async (req, res) => {
 
   const excludeId = parseInt(exclude);
 
-  const questions = await prisma.question.findMany({
+  let questions = await prisma.question.findMany({
     where: {
       difficulty,
 
@@ -41,10 +41,29 @@ const getRandomQuestion = async (req, res) => {
     },
   });
 
-  // Если questions нет —
-  // автоматически генерируем новый
-
   if (questions.length === 0) {
+
+    let totalQuestions = await prisma.question.count();
+
+    while (totalQuestions >= 250) {
+
+      const oldestQuestion = await prisma.question.findFirst({
+        orderBy: {
+          id: "asc",
+        },
+      });
+
+      if (oldestQuestion) {
+        await prisma.question.delete({
+          where: {
+            id: oldestQuestion.id,
+          },
+        });
+      }
+
+      totalQuestions = await prisma.question.count();
+    }
+
     const generated = await generateQuestion(difficulty);
 
     const savedQuestion = await prisma.question.create({
@@ -62,30 +81,59 @@ const getRandomQuestion = async (req, res) => {
     return res.json(savedQuestion);
   }
 
-  // Если pool вопросов маленький —
-  // автоматически пополняем базу
+  try {
 
-  if (questions.length < 100) {
-    try {
-      const generated = await generateQuestion(difficulty);
+    let totalQuestions = await prisma.question.count();
 
-      await prisma.question.create({
-        data: {
-          question: generated.question,
+    while (totalQuestions >= 250) {
 
-          answer: generated.answer,
-
-          difficulty: generated.difficulty,
-
-          explanation: generated.explanation,
+      const oldestQuestion = await prisma.question.findFirst({
+        orderBy: {
+          id: "asc",
         },
       });
-    } catch (error) {
-      console.error("AI generation error:", error.message);
-    }
-  }
 
-  // Random question selection
+      if (oldestQuestion) {
+        await prisma.question.delete({
+          where: {
+            id: oldestQuestion.id,
+          },
+        });
+      }
+
+      totalQuestions = await prisma.question.count();
+    }
+
+    const generated = await generateQuestion(difficulty);
+
+    await prisma.question.create({
+      data: {
+        question: generated.question,
+
+        answer: generated.answer,
+
+        difficulty: generated.difficulty,
+
+        explanation: generated.explanation,
+      },
+    });
+
+    // обновляем pool после изменений
+    questions = await prisma.question.findMany({
+      where: {
+        difficulty,
+
+        ...(excludeId && {
+          id: {
+            not: excludeId,
+          },
+        }),
+      },
+    });
+
+  } catch (error) {
+    console.error("AI generation error:", error.message);
+  }
 
   const randomQuestion =
     questions[Math.floor(Math.random() * questions.length)];
@@ -120,21 +168,52 @@ const checkAnswer = async (req, res) => {
 const generateNewQuestion = async (req, res) => {
   const { difficulty } = req.query;
 
-  const generated = await generateQuestion(difficulty);
+  try {
 
-  const savedQuestion = await prisma.question.create({
-    data: {
-      question: generated.question,
+    let totalQuestions = await prisma.question.count();
 
-      answer: generated.answer,
+    while (totalQuestions >= 250) {
 
-      difficulty: generated.difficulty,
+      const oldestQuestion = await prisma.question.findFirst({
+        orderBy: {
+          id: "asc",
+        },
+      });
 
-      explanation: generated.explanation,
-    },
-  });
+      if (oldestQuestion) {
+        await prisma.question.delete({
+          where: {
+            id: oldestQuestion.id,
+          },
+        });
+      }
 
-  res.json(savedQuestion);
+      totalQuestions = await prisma.question.count();
+    }
+
+    const generated = await generateQuestion(difficulty);
+
+    const savedQuestion = await prisma.question.create({
+      data: {
+        question: generated.question,
+
+        answer: generated.answer,
+
+        difficulty: generated.difficulty,
+
+        explanation: generated.explanation,
+      },
+    });
+
+    res.json(savedQuestion);
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "AI generation failed",
+    });
+  }
 };
 
 module.exports = {
