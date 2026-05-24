@@ -45,7 +45,7 @@ const getRandomQuestion = async (req, res) => {
 
     let totalQuestions = await prisma.question.count();
 
-    while (totalQuestions >= 250) {
+    if (totalQuestions >= 249) {
 
       const oldestQuestion = await prisma.question.findFirst({
         orderBy: {
@@ -60,8 +60,6 @@ const getRandomQuestion = async (req, res) => {
           },
         });
       }
-
-      totalQuestions = await prisma.question.count();
     }
 
     const generated = await generateQuestion(difficulty);
@@ -81,11 +79,12 @@ const getRandomQuestion = async (req, res) => {
     return res.json(savedQuestion);
   }
 
+  // Автоматическая AI генерация
   try {
 
     let totalQuestions = await prisma.question.count();
 
-    while (totalQuestions >= 250) {
+    if (totalQuestions >= 249) {
 
       const oldestQuestion = await prisma.question.findFirst({
         orderBy: {
@@ -100,8 +99,6 @@ const getRandomQuestion = async (req, res) => {
           },
         });
       }
-
-      totalQuestions = await prisma.question.count();
     }
 
     const generated = await generateQuestion(difficulty);
@@ -118,7 +115,6 @@ const getRandomQuestion = async (req, res) => {
       },
     });
 
-    // обновляем pool после изменений
     questions = await prisma.question.findMany({
       where: {
         difficulty,
@@ -172,7 +168,7 @@ const generateNewQuestion = async (req, res) => {
 
     let totalQuestions = await prisma.question.count();
 
-    while (totalQuestions >= 250) {
+    if (totalQuestions >= 250) {
 
       const oldestQuestion = await prisma.question.findFirst({
         orderBy: {
@@ -187,8 +183,6 @@ const generateNewQuestion = async (req, res) => {
           },
         });
       }
-
-      totalQuestions = await prisma.question.count();
     }
 
     const generated = await generateQuestion(difficulty);
