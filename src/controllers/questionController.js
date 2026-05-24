@@ -1,5 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
-const { generateQuestion } = require("../utils/questionGenerator");
+const { generateQuestion } = require("../utils/aiGenerator");
 
 const prisma = new PrismaClient();
 
@@ -32,6 +32,7 @@ const getRandomQuestion = async (req, res) => {
   const questions = await prisma.question.findMany({
     where: {
       difficulty,
+
       ...(excludeId && {
         id: {
           not: excludeId,
@@ -40,44 +41,51 @@ const getRandomQuestion = async (req, res) => {
     },
   });
 
-  if (questions.length === 0) {
+  // Если questions нет —
+  // автоматически генерируем новый
 
-    const generated = generateQuestion(difficulty);
-  
+  if (questions.length === 0) {
+    const generated = await generateQuestion(difficulty);
+
     const savedQuestion = await prisma.question.create({
       data: {
-        question: generated.text,
-  
-        answer: Array.isArray(generated.answer)
-          ? generated.answer.join(", ")
-          : generated.answer.toString(),
-  
-        difficulty,
-  
+        question: generated.question,
+
+        answer: generated.answer,
+
+        difficulty: generated.difficulty,
+
         explanation: generated.explanation,
       },
     });
-  
+
     return res.json(savedQuestion);
   }
-  if (questions.length < 100) {
 
-    const generated = generateQuestion(difficulty);
-  
-    await prisma.question.create({
-      data: {
-        question: generated.text,
-  
-        answer: Array.isArray(generated.answer)
-          ? generated.answer.join(", ")
-          : generated.answer.toString(),
-  
-        difficulty,
-  
-        explanation: generated.explanation,
-      },
-    });
+  // Если pool вопросов маленький —
+  // автоматически пополняем базу
+
+  if (questions.length < 100) {
+    try {
+      const generated = await generateQuestion(difficulty);
+
+      await prisma.question.create({
+        data: {
+          question: generated.question,
+
+          answer: generated.answer,
+
+          difficulty: generated.difficulty,
+
+          explanation: generated.explanation,
+        },
+      });
+    } catch (error) {
+      console.error("AI generation error:", error.message);
+    }
   }
+
+  // Random question selection
 
   const randomQuestion =
     questions[Math.floor(Math.random() * questions.length)];
@@ -112,15 +120,16 @@ const checkAnswer = async (req, res) => {
 const generateNewQuestion = async (req, res) => {
   const { difficulty } = req.query;
 
-  const generated = generateQuestion(difficulty);
+  const generated = await generateQuestion(difficulty);
 
   const savedQuestion = await prisma.question.create({
     data: {
-      question: generated.text,
-      answer: Array.isArray(generated.answer)
-        ? generated.answer.join(", ")
-        : generated.answer.toString(),
-      difficulty,
+      question: generated.question,
+
+      answer: generated.answer,
+
+      difficulty: generated.difficulty,
+
       explanation: generated.explanation,
     },
   });
